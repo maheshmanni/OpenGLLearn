@@ -9,7 +9,7 @@ namespace GL_LEARN
     {
         m_iFBO = 0;
         m_iMSFBO = 0;
-        m_iNumSamples = 4;
+        m_iNumSamples = 16;
         InValidate();
     }
 
@@ -36,7 +36,15 @@ namespace GL_LEARN
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, iMSTexture, 0);
         glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
 
+        unsigned int iMSRBO;
+        glGenRenderbuffers(1, &iMSRBO);
+        glBindRenderbuffer(GL_RENDERBUFFER, iMSRBO);
+        glRenderbufferStorageMultisample(GL_RENDERBUFFER, m_iNumSamples, GL_DEPTH24_STENCIL8, m_iWidth, m_iHeight);
+        glBindRenderbuffer(GL_RENDERBUFFER, 0);
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, iMSRBO);
 
+
+        //normal framebuffer
         glGenFramebuffers(1, &m_iFBO);
         glBindFramebuffer(GL_FRAMEBUFFER, m_iFBO);
         glGenTextures(1, &m_iColorTexId);
@@ -63,7 +71,7 @@ namespace GL_LEARN
 
     void OpenGLFrameBuffer::Bind()
     {
-        glBindFramebuffer(GL_FRAMEBUFFER, m_iFBO);
+        glBindFramebuffer(GL_FRAMEBUFFER, m_iMSFBO);
     }
 
     void OpenGLFrameBuffer::UnBind()
@@ -80,6 +88,10 @@ namespace GL_LEARN
 
     unsigned int OpenGLFrameBuffer::GetColorTexture()
     {
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, m_iMSFBO);
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_iFBO);
+        glBlitFramebuffer(0, 0, m_iWidth, m_iHeight, 0, 0, m_iWidth, m_iHeight, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
         return m_iColorTexId;
     }
 
